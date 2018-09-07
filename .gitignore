@@ -1,0 +1,5 @@
+*.config
+*.pyc
+*.swp
+*__pycache__*
+
