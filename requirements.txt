@@ -1,0 +1,5 @@
+pandas
+numpy
+pyqt5==5.11.2
+pyqtgraph==0.10.0
+myo-python==0.2.3

@@ -7,8 +7,10 @@ jdaly
 
 import myo as libmyo
 import numpy as np
+import config
 
-SDK_BIN_PATH = r'C:\Users\RJ\Documents\.Rowan Fall 2018\ProstheticArmClinic\myo-sdk-win-0.9.0\bin'
+config_data = config.load_config()
+SDK_BIN_PATH = config_data['sdk_path']
 libmyo.init(dist_path=SDK_BIN_PATH)
 
 class DataBuffer:
@@ -61,7 +63,6 @@ class Listener(libmyo.DeviceListener):
         """
         self.pose = pose
         print(str(self.pose))
-        print(self.emg_enabled)
 
     def on_rssi(self, myo, timestamp, rssi):
         pass
