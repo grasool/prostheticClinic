@@ -10,13 +10,17 @@ Raw Myo data acquisition and display
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg 
 
-import data_collector
+import data_collector, os
 import myo as libmyo #; libmyo.init()
 from myo_listener import Listener
 
 import numpy as np
 
 import sys, time
+
+EMG_RANGE = 8
+ORI_RANGE = 4
+ACC_RANGE = 3
 
 #class RawWindow(QtGui.QWidget):
 class RawWindow(QtGui.QMainWindow):
@@ -129,7 +133,7 @@ class RawWindow(QtGui.QMainWindow):
         
         self.emgplot_channels = []
         j = 0
-        for i in range(8):
+        for i in range(EMG_RANGE):
             if i == 4:
                 j = 1
                 
@@ -152,12 +156,94 @@ class RawWindow(QtGui.QMainWindow):
         self.window_type = 'emg'
       
     def acc_plots(self):
-        print('Acc Plots Are Unfinished!')
-        #time.sleep(0.1)
+        self.cw.close()
+        
+        self.cw = QtGui.QWidget()
+        self.setCentralWidget(self.cw)
+        self.l = QtGui.QGridLayout()
+        self.cw.setLayout(self.l)
+        
+        titleLabel = QtGui.QLabel('Myo Data Acquirer')
+        titleLabel.setFont(QtGui.QFont("Garamond", 16, QtGui.QFont.Bold))
+        self.l.addWidget(titleLabel, 0, 0, 2, 1)
+        
+        emg_button = QtGui.QPushButton('All Plots')
+        emg_button.setToolTip('Open all plots.')
+        emg_button.clicked.connect(self.revert_to_all_plots)
+        self.l.addWidget(emg_button, 0, 0, 1, 1)
+        
+        record = QtGui.QPushButton('Record Data')
+        record.setToolTip('Record MYO Data')
+        record.setStyleSheet("background-color: green")
+        record.clicked.connect(self.toggle_record)
+        self.record = record
+        self.l.addWidget(record, 1, 0, 1, 1)
+        
+        self.accplot_channels = []
+        for i in range(ACC_RANGE):
+                
+            self.accplot_channels.append(pg.PlotWidget(name='Acceleration Channel %s' % (i+1)))
+            self.accplot_channels[-1].setRange(QtCore.QRectF(0,-2,1000,7))
+            self.accplot_channels[-1].disableAutoRange()
+            self.accplot_channels[-1].setTitle("Acceleration Channel %s" % (i+1))
+            self.l.addWidget(self.accplot_channels[-1], i, 1, 1, 2)
+
+        self.refreshRate = 0.05
+        
+        self.acccurve = []
+        for i in range(ACC_RANGE):
+            c = self.accplot_channels[i].plot(pen=(i,10))
+            c.setPos(0,0)
+            self.acccurve.append(c)
+        
+        self.lastUpdateTime = time.time()
+        
+        self.window_type = 'acc'
     
     def ori_plots(self):
-        print('Ori Plots Are Unfinished!')
-        #time.sleep(0.1)
+        self.cw.close()
+        
+        self.cw = QtGui.QWidget()
+        self.setCentralWidget(self.cw)
+        self.l = QtGui.QGridLayout()
+        self.cw.setLayout(self.l)
+        
+        titleLabel = QtGui.QLabel('Myo Data Acquirer')
+        titleLabel.setFont(QtGui.QFont("Garamond", 16, QtGui.QFont.Bold))
+        self.l.addWidget(titleLabel, 0, 0, 2, 1)
+        
+        all_button = QtGui.QPushButton('All Plots')
+        all_button.setToolTip('Open all plots.')
+        all_button.clicked.connect(self.revert_to_all_plots)
+        self.l.addWidget(all_button, 0, 0, 1, 1)
+        
+        record = QtGui.QPushButton('Record Data')
+        record.setToolTip('Record MYO Data')
+        record.setStyleSheet("background-color: green")
+        record.clicked.connect(self.toggle_record)
+        self.record = record
+        self.l.addWidget(record, 1, 0, 1, 1)
+        
+        self.oriplot_channels = []
+        for i in range(ORI_RANGE):
+                
+            self.oriplot_channels.append(pg.PlotWidget(name='Orientation Channel %s' % (i+1)))
+            self.oriplot_channels[-1].setRange(QtCore.QRectF(0,-1,1000,8))
+            self.oriplot_channels[-1].disableAutoRange()
+            self.oriplot_channels[-1].setTitle("Orientation Channel %s" % (i+1))
+            self.l.addWidget(self.oriplot_channels[-1], i, 1, 1, 2)
+
+        self.refreshRate = 0.05
+        
+        self.oricurve = []
+        for i in range(ORI_RANGE):
+            c = self.oriplot_channels[i].plot(pen=(i,10))
+            c.setPos(0,0)
+            self.oricurve.append(c)
+        
+        self.lastUpdateTime = time.time()
+        
+        self.window_type = 'ori'
         
     def toggle_record(self):
         if self.myo_data_record.recording:
@@ -190,24 +276,28 @@ class RawWindow(QtGui.QMainWindow):
         if (ctime - self.lastUpdateTime) >= self.refreshRate:
             self.myo_data_record.collect(self.listener, ctime)
             if win == 'all' or win == 'emg':
-                for i in range(8):
-                    self.emgcurve[i].setData(self.listener.emg.data[i,:])
+                for i in range(EMG_RANGE):
+                    try:
+                        self.emgcurve[i].setData(self.listener.emg.data[i,:])
+                    except IndexError as e1:
+                        print('EMG CURVE LEN:', len(self.emgcurve))
+                        print('LISTENER EMG DATA CHANNEL LEN:', len(self.listener.emg.data))
+                        print('LISTENER EMG DATA STREAM LEN:', len(self.listener.emg.data[i]))
+                        print('Current Index:', i)
             if win == 'all' or win == 'ori':
-                for i in range(4):
+                for i in range(ORI_RANGE):
                     self.oricurve[i].setData(self.listener.orientation.data[i,:])
             if win == 'all' or win == 'acc':
-                for i in range(3):
+                for i in range(ACC_RANGE):
                     self.acccurve[i].setData(self.listener.acc.data[i,:])
                 
             self.lastUpdateTime = ctime
             app.processEvents()
-
-    def closeEvent(self, event):
+        
+    def closeEvent(self, event, restart=0):
         print("Closing...")
-        self.hub.shutdown()	
-
-
-
+        self.hub.shutdown()
+        
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     window = RawWindow()

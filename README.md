@@ -1,8 +1,8 @@
 # Prosthetic Arm Engineering Clinic
-### Rowan University
-### Department of Electrical and Computer Engineering
-### Advisor: Dr. Rasool
-### First Commit - Fall Semester 2018
+#### Rowan University
+#### Department of Electrical and Computer Engineering
+#### Advisor: Dr. Rasool
+#### First Commit - Fall Semester 2018
 
 SETUP
 -----

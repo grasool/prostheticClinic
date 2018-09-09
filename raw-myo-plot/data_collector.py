@@ -30,6 +30,9 @@ class myo_data_collector(object):
         if self.recording:
             self.timescale.append(ctime)
             for i in range(EMG_RANGE):
+                print(len(listener.emg.data))
+                print(len(listener.emg.data[i]))
+                print()
                 self.emg[i].append(listener.emg.data[i, -1])
                 
                 if i < ORI_RANGE:
