@@ -22,3 +22,16 @@ python3 config.py
 ```
 pip3 install -r requirements.txt
 ```
+
+Troubleshooting Known Errors
+----------------------------
+### When connection to MYO hub cannot be created.
+    - Usually happens when hub is not shut down before script is shut down.
+    - TO FREE MYO HUB:
+        1. Open task manager, close MYO Connect program or service
+        2. Re-open MYO Connect
+        3. Retry running script
+        4. If same error occurs, connect MYO to computer via USB for a minute
+        5. Unconnect MYO, put back on arm
+        6. Retry running script
+        7. If error still persists, restart computer.
