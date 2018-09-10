@@ -11,9 +11,9 @@ OUT_FILE = os.path.join(OUT_FOLDER, 'myo_record_%s.csv')
 
 class myo_data_collector(object):
     def __init__(self):
-        self.emg = [[]]*EMG_RANGE
-        self.acc = [[]]*ACC_RANGE
-        self.ori = [[]]*ORI_RANGE
+        self.emg = np.array([[]]*EMG_RANGE)
+        self.acc = np.array([[]]*ACC_RANGE)
+        self.ori = np.array([[]]*ORI_RANGE)
         self.timescale = []
         self.recording = False
         
@@ -29,16 +29,10 @@ class myo_data_collector(object):
     def collect(self, listener, ctime):
         if self.recording:
             self.timescale.append(ctime)
-            for i in range(EMG_RANGE):
-                print(len(listener.emg.data))
-                print(len(listener.emg.data[i]))
-                print()
-                self.emg[i].append(listener.emg.data[i, -1])
-                
-                if i < ORI_RANGE:
-                    self.ori[i].append(listener.orientation.data[i, -1])
-                if i < ACC_RANGE:
-                    self.acc[i].append(listener.acc.data[i, -1])
+            
+            self.emg = np.hstack((self.emg, listener.emg.data[:, -1:]))
+            self.ori = np.hstack((self.ori, listener.orientation.data[:, -1:]))
+            self.acc = np.hstack((self.acc, listener.acc.data[:, -1:]))
                     
     def save_record(self):
         out = pd.DataFrame(columns=['time'])

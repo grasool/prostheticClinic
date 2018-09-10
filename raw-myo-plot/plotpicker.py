@@ -13,21 +13,25 @@ def getRecords():
     assert len(records) > 0
     
     RECORD_FILENAME = 'myo_record_%s.csv'
-    valid_records = [name.split('_')[-1].split('.')[0] for name in records]
-    print('\nList of valid entries:', valid_records, '\n')
+    valid_records = {str(i): os.path.join(RECORD_DIR, name) for i, name in enumerate(records)}
+    print('\nList of valid entries:')
+    for i in list(valid_records):
+        print('Enter %s for %s' % (i, valid_records[i]))
+    print()
+    
     pulls = []
     end = False
     while not end:
         temp = input('Input number of record to pull (enter empty input to continue): ')
-        
-        if temp in valid_records:
+
+        if temp in list(valid_records):
             pulls.append(temp)
         elif temp == '':
             end = True
         else:
             print('\nEntry %s not found...\n' % os.path.join(RECORD_DIR, RECORD_FILENAME%temp))
             
-    pulls = [os.path.join(RECORD_DIR, RECORD_FILENAME % entry) for entry in pulls]
+    pulls = [valid_records[entry] for entry in pulls]
     
     print('\nRecords pulled:', pulls, '\n')
     
@@ -59,11 +63,9 @@ def splitData(df):
         if i < ORI_RANGE:
             oriData.append(df[ORI % (i+1)].tolist())
     
-    print(emgData)
     emgData = np.array(emgData)
     accData = np.array(accData)
     oriData = np.array(oriData)
-    print(emgData)
     
     return emgData, accData, oriData, timeData
     
@@ -89,7 +91,6 @@ def plotData(data):
     
     fig = {}
     axes = {}
-    print(list(data))
     for _f in list(data):
         emg, acc, ori, time = splitData(data[_f])
         
