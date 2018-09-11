@@ -5,21 +5,22 @@ void setup() {
   Serial.begin(9600);
   pinMode(LED_BUILTIN,OUTPUT);
 }
-int s = -1;
+int s = 0;
 void loop() {
   // put your main code here, to run repeatedly:
+  Serial.print(Serial.available());
   if(Serial.available()){
-    s = (int)Serial.read();
+    s += 1; //(int)Serial.read();
     //Serial.println(s);
-    if(s == 49){
+    if(s%2 == 0){
       digitalWrite(LED_BUILTIN,HIGH);
-      //Serial.print("ON");
-      delay(10);
+      Serial.print("ON");
+      delay(100);
     }
-    if(s == 48){
+    if(s%2 == 1){
       digitalWrite(LED_BUILTIN,LOW);
-      //Serial.print("OFF");
-      delay(10);
+      Serial.print("OFF");
+      delay(100);
     }
   }
 }
