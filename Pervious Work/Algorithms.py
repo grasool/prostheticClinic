@@ -78,8 +78,6 @@ class LDA:
         self.train(train, trainLabels)
         self.saveLDA(fileName)
 
-    
-
 class KalmanFilter:
     pass
 
