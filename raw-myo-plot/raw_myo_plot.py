@@ -172,6 +172,13 @@ class RawWindow(QtGui.QMainWindow):
         self.record = record
         self.l.addWidget(record, 1, 0, 1, 1)
         
+        save_plot_data = QtGui.QPushButton('Save Plotted Data')
+        save_plot_data.setToolTip('Save MYO data seen on plots')
+        save_plot_data.setStyleSheet('background-color: green')
+        save_plot_data.clicked.connect(self.record_plot_data)
+        self.save_plot_data = save_plot_data
+        self.l.addWidget(save_plot_data, 2, 0, 1, 1)
+        
         # Creates empty list for each EMG channel to be put on seperate plots
         self.emgplot_channels = []
         j = 0 # Subplot positioning variable
@@ -237,6 +244,13 @@ class RawWindow(QtGui.QMainWindow):
         self.record = record
         self.l.addWidget(record, 1, 0, 1, 1)
         
+        save_plot_data = QtGui.QPushButton('Save Plotted Data')
+        save_plot_data.setToolTip('Save MYO data seen on plots')
+        save_plot_data.setStyleSheet('background-color: green')
+        save_plot_data.clicked.connect(self.record_plot_data)
+        self.save_plot_data = save_plot_data
+        self.l.addWidget(save_plot_data, 2, 0, 1, 1)
+        
         # Creates list to be filled with acc channel plots
         self.accplot_channels = []
         self.acccurve= []
@@ -297,6 +311,13 @@ class RawWindow(QtGui.QMainWindow):
         self.record = record
         self.l.addWidget(record, 1, 0, 1, 1)
         
+        save_plot_data = QtGui.QPushButton('Save Plotted Data')
+        save_plot_data.setToolTip('Save MYO data seen on plots')
+        save_plot_data.setStyleSheet('background-color: green')
+        save_plot_data.clicked.connect(self.record_plot_data)
+        self.save_plot_data = save_plot_data
+        self.l.addWidget(save_plot_data, 2, 0, 1, 1)
+        
         # Creates list for orientation channel plots
         self.oriplot_channels = []
         self.oricurve = []
@@ -347,6 +368,11 @@ class RawWindow(QtGui.QMainWindow):
             # when plots are updated.
         self.myo_data_record.toggle_recording()
         
+    def record_plot_data(self):
+        filename = self.myo_data_record.save_plot_data(self.listener)
+        
+        print('Plot record saved at %s' % filename)
+        
     def start_listening(self):
         # Starts listenening to MYO device
         self.myo_data_record = data_collector.myo_data_collector()
@@ -375,10 +401,7 @@ class RawWindow(QtGui.QMainWindow):
                             # a fix until origin can be found and patched.
                         self.emgcurve[i].setData(self.listener.emg.data[i,:])
                     except IndexError as e1:
-                        print('EMG CURVE LEN:', len(self.emgcurve))
-                        print('LISTENER EMG DATA CHANNEL LEN:', len(self.listener.emg.data))
-                        print('LISTENER EMG DATA STREAM LEN:', len(self.listener.emg.data[i]))
-                        print('Current Index:', i)
+                        print('EMG index not initialized correctly... Fixing...')
             if win == 'all' or win == 'ori': # Updates ori data
                 for i in range(ORI_RANGE):
                     self.oricurve[i].setData(self.listener.orientation.data[i,:])

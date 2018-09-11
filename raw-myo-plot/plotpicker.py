@@ -1,5 +1,6 @@
 import os, pandas as pd, numpy as np
 import matplotlib.pyplot as plt
+from scipy.fftpack import fft
 
 RECORD_DIR = 'myo_data'
 if not os.path.exists(RECORD_DIR):
@@ -128,12 +129,20 @@ def plotData(data):
         if displayFields == 'emg' or dispAll: # Display EMG plot
             # Creates plot key and overall subplot
             emgPlot = 'EMG - %s' % _f
+            emgFFTPlot = 'EMG - %s (Frequency Domain)' % _f
             fig[emgPlot], axes[emgPlot] = plt.subplots(4, 2, sharex=True, sharey=True)
+            fig[emgFFTPlot], axes[emgFFTPlot] = plt.subplots(4, 2, sharex=True, sharey=True)
             
-            # Sets figure title, subplot layout and xlim
-            fig[emgPlot].suptitle(emgPlot)
-            fig[emgPlot].subplots_adjust(hspace=0.6)
-            axes[emgPlot][0, 0].set_xlim(0, len(time))
+            for p in [emgPlot, emgFFTPlot]:
+                # Sets figure title, subplot layout and xlim
+                fig[p].suptitle(p)
+                fig[p].subplots_adjust(hspace=0.6)
+                
+                divFactor = 1
+                if 'frequency' in p.lower():
+                    divFactor = 2
+                    
+                axes[p][0, 0].set_xlim(0, int(len(time)/divFactor))
             
             # Places channel data on plots
             j = 0
@@ -142,7 +151,9 @@ def plotData(data):
                     j+=1
                 axes[emgPlot][i-(4*j), j].set_title('EMG Channel %s' % (i+1))
                 axes[emgPlot][i-(4*j), j].plot(range(len(time)), emg[i])
-            
+                
+                plotFFT(axes[emgFFTPlot][i-(4*j), j], emg[i], i)
+                
         # ACC PLOT
         if displayFields == 'acc' or dispAll: # Display ACC plot
             # Creates plot key and overall subplot
@@ -161,7 +172,6 @@ def plotData(data):
             
         # ORI PLOT
         if displayFields == 'ori' or dispAll: # Display ORI plot
-            # TODO: Input code for creating ORI plots
             oriPlot = 'Orientation - %s' % _f
             fig[oriPlot], axes[oriPlot] = plt.subplots(3, 1, sharex=True, sharey=True)
             
@@ -177,6 +187,17 @@ def plotData(data):
             
     plt.show()
         
+def plotFFT(axis, data, ind):
+    N = len(data) # Amount of samples
+    T = 1.0/800.0 # Sample space
+    x = np.linspace(0.0, T*N, N) # Linespace for x axis
+    yf = fft(data) # Put data into frequency domain
+    xf = np.linspace(0.0, 1.0/(2.0*T), N/2) # Put x axis into frequency domain
+    
+    # Plot data
+    axis.set_title('EMG Channel %s' % (ind+1))
+    axis.plot(xf, 2.0/N * np.abs(yf[:int(N/2)]))
+    
     
 if __name__ == '__main__':
     data = getRecords()

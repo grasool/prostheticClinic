@@ -43,6 +43,19 @@ class myo_data_collector(object):
             self.emg = np.hstack((self.emg, listener.emg.data[:, -1:]))
             self.ori = np.hstack((self.ori, listener.orientation.data[:, -1:]))
             self.acc = np.hstack((self.acc, listener.acc.data[:, -1:]))
+            
+    def save_plot_data(self, listener):
+        self.timescale = range(len(listener.emg.data[0]))
+        
+        self.emg = np.array(listener.emg.data)
+        self.ori = np.array(listener.orientation.data)
+        self.acc = np.array(listener.acc.data)
+
+        filename = self.save_record()
+        
+        self.reset_data()
+        
+        return filename
                     
     def save_record(self):
         # If recorder is told to save buffers...

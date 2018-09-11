@@ -1,4 +1,4 @@
-import json
+import json, os
 
 # Filename for output
 CONFIG_FILE = 'myo.config'

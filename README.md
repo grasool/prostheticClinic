@@ -2,7 +2,7 @@
 #### Rowan University
 #### Department of Electrical and Computer Engineering
 #### Advisor: Dr. Rasool
-#### First Commit - Fall Semester 2018
+#### First Commit - Fall Semester 2018 (But includes work from previous semesters never recorded on Git)
 
 SETUP
 -----
@@ -26,7 +26,7 @@ pip3 install -r requirements.txt
 Troubleshooting Known Errors
 ----------------------------
 ### When connection to MYO hub cannot be created.
-    - Usually happens when hub is not shut down before script is shut down.
+- Usually happens when hub is not shut down before script is shut down.
     - TO FREE MYO HUB:
         1. Open task manager, close MYO Connect program or service
         2. Re-open MYO Connect
