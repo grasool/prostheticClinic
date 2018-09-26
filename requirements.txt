@@ -3,3 +3,8 @@ numpy
 pyqt5==5.11.2
 pyqtgraph==0.10.0
 myo-python==0.2.3
+Adafruit_PCA9685==1.0.1
+Adafruit-GPIO==1.0.3
+Adafruit-PureIO==0.2.3
+RPi.GPIO==0.6.3
+keyboard==0.13.2

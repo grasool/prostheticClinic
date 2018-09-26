@@ -32,14 +32,14 @@ class Motion():
 	def pointer(self,pos):
 		self.motor.set_pwm(1,0,pos)
 
-        def thumb(self,pos):
+	def thumb(self,pos):
 		self.motor.set_pwm(0,0,pos)
 		
-        def openWrist(self):
-                self.motor.set_pwm(0,0,self.open)
+	def openWrist(self):
+		self.motor.set_pwm(0,0,self.open)
     
-        def closeWrist(self):
-                self.motor.set_pwm(0,0,self.closed)
+	def closeWrist(self):
+		self.motor.set_pwm(0,0,self.closed)
 
 #All fingers 		
 	def allFingers(self,pos):
