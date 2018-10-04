@@ -264,7 +264,7 @@ class RawWindow(QtGui.QMainWindow):
             self.accplot_channels[-1].setTitle("Acceleration Channel %s" % (i+1))
             
             # Adds plot to screen widget
-            self.l.addWidget(self.accplot_channels[-1], i, 1, 1, 2)
+            self.l.addWidget(self.accplot_channels[-1], i, 1, 1, 1)
             
             # Gets acc buffer data and puts on plot
             c = self.accplot_channels[i].plot(pen=(i,10))
@@ -331,7 +331,7 @@ class RawWindow(QtGui.QMainWindow):
             self.oriplot_channels[-1].setTitle("Orientation Channel %s" % (i+1))
             
             # Adds widget to screen
-            self.l.addWidget(self.oriplot_channels[-1], i, 1, 1, 2)
+            self.l.addWidget(self.oriplot_channels[-1], i, 1, 1, 1)
             
             # Gets orientation buffer data and puts on plot
             c = self.oriplot_channels[i].plot(pen=(i,10))
@@ -404,11 +404,17 @@ class RawWindow(QtGui.QMainWindow):
                         print('EMG index not initialized correctly... Fixing...')
             if win == 'all' or win == 'ori': # Updates ori data
                 for i in range(ORI_RANGE):
-                    self.oricurve[i].setData(self.listener.orientation.data[i,:])
+                    try:
+                        self.oricurve[i].setData(self.listener.orientation.data[i,:])
+                    except IndexError as e2:
+                        print('ORI index not initialized correctly... Fixing...')
             if win == 'all' or win == 'acc': # Updates acc data
-                for i in range(ACC_RANGE): 
-                    self.acccurve[i].setData(self.listener.acc.data[i,:])
-                
+                for i in range(ACC_RANGE):
+                    try:
+                        self.acccurve[i].setData(self.listener.acc.data[i,:])
+                    except IndexError as e3:
+                        print('ACC index not initialized correctly... Fixing...')
+                        
             # Resets update time
             self.lastUpdateTime = ctime
             app.processEvents() # Tells plots to update with new data
