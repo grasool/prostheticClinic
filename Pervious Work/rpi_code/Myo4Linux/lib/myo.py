@@ -41,6 +41,7 @@ class Myo(object):
 
     def find_tty(self):
         for port in comports():
+            print(port)
             if re.search(r'PID=2458:0*1', port[2]):
                 return port[0]
 

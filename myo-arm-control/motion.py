@@ -19,6 +19,7 @@ class Motion():
         self.funcDict = {'thumb':self.thumb,'pointer':self.pointer,'middle':self.middle,'ring':self.ring,'pinky':self.pinky}
         #self.funcList = [self.thumb,self.pointer,self.middle,self.ring,self.pinky]
         self.positions = {num: self.closed for num in self.motor_order}
+        self.positions[5] = 130
         self.allClosed()
 
 #Individual Fingers
@@ -42,20 +43,29 @@ class Motion():
         self.motor.set_pwm(0,0,pos)
         self.updatePosition(0, pos)
     
+    def wrist(self, pos):
+        self.motor.set_pwm(5, 0, pos)
+        self.updatePosition(5, pos)
+
     def openWrist(self):
-        self.motor.set_pwm(0,0,self.open)
+        self.wrist(self.open)
+        #self.motor.set_pwm(5,0,self.open)
 
     def closeWrist(self):
-        self.motor.set_pwm(0,0,self.closed)
+        self.wrist(self.closed)
+        #self.motor.set_pwm(5,0,self.closed)
 
     def updatePosition(self, joint, pos):
+        if pos > 600 or pos < 130:
+            print('Position out of range')
+            return
         self.positions[joint] = pos
         
 #All fingers         
     def allFingers(self,pos):
         for i, finger in enumerate(self.funcDict):
             self.funcDict[finger](pos[i])
-            self.updatePosition(i, pos)
+            self.updatePosition(i, pos[i])
         
     def allFingers2(self,pos):
         for finger in self.funcDict:
