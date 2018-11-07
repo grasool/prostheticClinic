@@ -13,22 +13,30 @@ OUT_FILE = os.path.join(OUT_FOLDER, 'myo_record_%s.csv')
 # Class for recording MYO data
 class myo_data_collector(object):
     def __init__(self):
-        # Creates numpy arrays for EMG, ACC and ORI data
-        self.emg = np.array([[]]*EMG_RANGE)
-        self.acc = np.array([[]]*ACC_RANGE)
-        self.ori = np.array([[]]*ORI_RANGE)
-        
-        # Creates time list and starts recording at False
-        self.timescale = []
+        self.set_originals()
         self.recording = False
         
         # If output directory does not exist, it is created
         if not os.path.exists(OUT_FOLDER):
             os.mkdir(OUT_FOLDER)
         
+    def set_originals(self):
+        # Creates numpy arrays for EMG, ACC and ORI data
+        self.emg = np.array([[]]*EMG_RANGE)
+        self.acc = np.array([[]]*ACC_RANGE)
+        self.ori = np.array([[]]*ORI_RANGE)
+        
+        # Creates time list and samples left
+        self.timescale = []
+        self.samples_left = -1
+        
     def reset_data(self):
         # Resets record buffers
-        self.__init__()
+        self.set_originals()
+        
+    def timed_record(self, sample_rate, record_time):
+        self.samples_left = sample_rate*record_time
+        #self.toggle_recording()
         
     def toggle_recording(self):
         # Toggles recording bool
@@ -43,6 +51,8 @@ class myo_data_collector(object):
             self.emg = np.hstack((self.emg, listener.emg.data[:, -1:]))
             self.ori = np.hstack((self.ori, listener.orientation.data[:, -1:]))
             self.acc = np.hstack((self.acc, listener.acc.data[:, -1:]))
+            
+            self.samples_left -= 1
             
     def save_plot_data(self, listener):
         self.timescale = range(len(listener.emg.data[0]))
@@ -80,6 +90,8 @@ class myo_data_collector(object):
         filename = find_filename()
         out.to_csv(filename, index=False)
         
+        self.reset_data()
+        
         return filename
         
 def find_filename():
@@ -100,6 +112,7 @@ def find_filename():
                 'Please move or delete some records from '
                 '%s directory.' % OUT_FOLDER)
         elif i == 10000:
+            print('10000 records present, starting to overwrite last file...')
             break
                     
         

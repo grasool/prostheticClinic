@@ -1,0 +1,19 @@
+Python module for EMG feature extraction
+
+1 main function
+INPUTS
+	CSV EMG record filename
+OUTPUT
+	All feature data for EMG record
+
+SUB FUNCTIONs
+each function finds one feature
+	RMS, MAV, variance, etc...
+INPUTS
+	Loaded EMG record data from CSV
+OUTPUTS
+	Record feature
+
+These sub functions will be called by the main function
+Main function will then put all features together
+Then return all features to caller

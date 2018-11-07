@@ -89,6 +89,7 @@ def splitData(df):
     emgData = np.array(emgData)
     accData = np.array(accData)
     oriData = np.array(oriData)
+    print(oriData.shape)
     
     return emgData, accData, oriData, timeData
     
@@ -173,7 +174,7 @@ def plotData(data):
         # ORI PLOT
         if displayFields == 'ori' or dispAll: # Display ORI plot
             oriPlot = 'Orientation - %s' % _f
-            fig[oriPlot], axes[oriPlot] = plt.subplots(3, 1, sharex=True, sharey=True)
+            fig[oriPlot], axes[oriPlot] = plt.subplots(4, 1, sharex=True, sharey=True)
             
             # Sets figure title, suplot layout and xlim
             fig[oriPlot].suptitle(oriPlot)
@@ -182,7 +183,7 @@ def plotData(data):
             
             # Places channel data on plots
             for i in range(ORI_RANGE):
-                axes[oriPlot][i].set_title('Acceleration Channel %s' % (i))
+                axes[oriPlot][i].set_title('Orientation Channel %s' % (i))
                 axes[oriPlot][i].plot(range(len(time)), ori[i])
             
     plt.show()
