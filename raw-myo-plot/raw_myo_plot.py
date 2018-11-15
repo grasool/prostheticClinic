@@ -2,14 +2,16 @@ from pyqtgraph.Qt import QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox
 import pyqtgraph as pg 
 
-import data_collector, os
+import data_collector
+import Extract_Features as ef
 import myo as libmyo #; libmyo.init()
 from myo_listener import Listener
 
+import pandas as pd
 import numpy as np
 
-import sys, time
-
+import sys, time, os
+    
 EMG_RANGE = 8
 ORI_RANGE = 4
 ACC_RANGE = 3
@@ -68,7 +70,7 @@ class RawWindow(QtGui.QMainWindow):
         
         # Shows EMG plot
         self.emgplot = pg.PlotWidget(name='EMGplot')
-        self.emgplot.setRange(xRange=(0, 1000), yRange=(-50, 400))#QtCore.QRectF(-50,-200,1000,1400))
+        self.emgplot.setRange(QtCore.QRectF(0,-50,1000,400))# xRange=(0, 1000), yRange=(-50, 400))#QtCore.QRectF(-50,-200,1000,1400))
         self.emgplot.disableAutoRange()
         self.emgplot.setTitle("EMG")
         l.addWidget(self.emgplot, 0, 1, 1, 1)
@@ -100,7 +102,7 @@ class RawWindow(QtGui.QMainWindow):
         # Creates list for EMG recordings then starts recording buffer
         # readings. Plots EMG buffer data on plot as well.
         self.emgcurve = []
-        for i in range(8):
+        for i in range(EMG_RANGE):
             c = self.emgplot.plot(pen=(i,10))
             c.setPos(0,i*50)
             self.emgcurve.append(c)
@@ -108,16 +110,16 @@ class RawWindow(QtGui.QMainWindow):
         # Creates list for acceleration recordings then starts recording buffer
         # readings. Plots acceleration buffer data on plot as well.
         self.oricurve = []
-        for i in range(4):
-            c = self.oriplot.plot(pen=(i,5))
+        for i in range(ORI_RANGE):
+            c = self.oriplot.plot(pen=(i,10))
             c.setPos(0,i*2)
             self.oricurve.append(c)
 
         # Creates list for orientation recordings then starts recording buffer
         # readings. Plots acceleration buffer data on plot as well.
         self.acccurve = []
-        for i in range(4):
-            c = self.accplot.plot(pen=(i,5))
+        for i in range(ACC_RANGE):
+            c = self.accplot.plot(pen=(i,10))
             c.setPos(0,i*2)
             self.acccurve.append(c)
         
@@ -210,7 +212,7 @@ class RawWindow(QtGui.QMainWindow):
         
         self.settingsTick = QtGui.QLabel(self.get_settings_tick())
         self.settingsTick.setFont(QtGui.QFont("Garamond", 10, QtGui.QFont.Bold))
-        self.l.addWidget(self.settingsTick, 4, 1, 1, 1)
+        self.l.addWidget(self.settingsTick, 4, 1, 2, 2)
         
         self.lastUpdateTime = time.time()
         
@@ -410,6 +412,8 @@ class RawWindow(QtGui.QMainWindow):
             # NOTE: Record buffer is also reset within this function
             filename = self.myo_data_record.save_record()
             print('Record saved at %s' % filename)
+            self.snipper = SnippingWindow(filename, self)
+            self.snipper.show()
             
             # Reset record data button back to green and original label
             self.record.setStyleSheet("background-color: green")
@@ -535,13 +539,19 @@ class RecordSettings(QtGui.QMainWindow):
         
         save_plot_data = QtGui.QPushButton('Save')
         save_plot_data.setToolTip('Save MYO Settings')
-        save_plot_data.clicked.connect(window.save_settings)
+        save_plot_data.clicked.connect(self.saveEvent)
         self.save_plot_data = save_plot_data
         self.l.addWidget(save_plot_data, 3, 0, 1, 1)
         
         save_plot_data = QtGui.QPushButton('Exit')
-        save_plot_data.clicked.connect(self.close)
+        save_plot_data.clicked.connect(self.closeEvent)
         self.l.addWidget(save_plot_data, 3, 1, 1, 1)
+        
+    def saveEvent(self):
+        global window
+        
+        window.save_settings()
+        self.closeEvent()
         
     def closeEvent(self, event=0, restart=0):
         global window
@@ -549,26 +559,40 @@ class RecordSettings(QtGui.QMainWindow):
         window.settings_open = False
         
 class SnippingWindow(QtGui.QMainWindow):
-    def __init__(self, filename):
-        # Sets up window
-        super(RawWindow, self).__init__()
-
+    def __init__(self, filename, parent=None):
+        self.main = False
+        print('Start')
+        # Sets up window parent
+        super(SnippingWindow, self).__init__(parent)
+        print('Super\'d')
         # Sets main window bar title and size
         self.setWindowTitle('Record Snipper')
         self.resize(800,480)
         
-        self.load_record(filename)
-        self.all_plots()
+        if filename == '':
+            self.main = True
+            filename = ef.getFilename()
+            
+        if not filename == '':
+            self.load_record(filename)
+            print('Record Loaded')
+            self.all_plots()
         
+    
+            
     def load_record(self, filename):
+        self.f = filename
         df = pd.read_csv(filename)
-        self.emg = np.array([[]]*EMG_RANGE)
-        self.acc = np.array([[]]*ACC_RANGE)
-        self.ori = np.array([[]]*ORI_RANGE)
+        self.sample_size = df.shape[0]
+        self.b = 0
+        self.e = self.sample_size
+        self.emg = np.empty([EMG_RANGE, self.sample_size])
+        self.acc = np.empty([ACC_RANGE, self.sample_size])
+        self.ori = np.empty([ORI_RANGE, self.sample_size])
         
         for col in list(df):
             try: # Should only fail on time column
-                num = int(col.split('_')[-1])
+                num = int(col.split('_')[-1])-1
             except:
                 pass
                 
@@ -581,9 +605,9 @@ class SnippingWindow(QtGui.QMainWindow):
         
     def all_plots(self):
         """
-            Screen: all_plots
+            Screen: snip_all_plots
             Desc: Shows EMG, acceleration and orientation plots for raw
-                MYO inputs. All channels for like-fields are shown on same
+                MYO record. All channels for like-fields are shown on same
                 plot (8 channels for EMG, 3 channels for acceleration and
                 4 channels for orientation).
         """
@@ -592,86 +616,157 @@ class SnippingWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.cw)
         l = QtGui.QGridLayout()
         self.cw.setLayout(l)
-        
+        print('Layout set')
         # Creates inner widget label for screen title
-        titleLabel = QtGui.QLabel('Myo Data Acquirer')
+        titleLabel = QtGui.QLabel('MYO Record Snipper')
         titleLabel.setFont(QtGui.QFont("Garamond", 16, QtGui.QFont.Bold))
-        l.addWidget(titleLabel, 0, 0, 2, 1)
-        
-        # Creates button to go to EMG plots screen
-        emg_button = QtGui.QPushButton('EMG Plots')
-        emg_button.setToolTip('Open only EMG plots.')
-        emg_button.clicked.connect(self.emg_plots)
-        l.addWidget(emg_button, 0, 0, 1, 1)
+        l.addWidget(titleLabel, 0, 0, 1, 2)
         
         # Shows EMG plot
-        self.emgplot = pg.PlotWidget(name='EMGplot')
-        self.emgplot.setRange(xRange=(0, 1000), yRange=(-50, 400))#QtCore.QRectF(-50,-200,1000,1400))
-        self.emgplot.disableAutoRange()
-        self.emgplot.setTitle("EMG")
-        l.addWidget(self.emgplot, 0, 1, 1, 1)
-
+        self.emgrecord = pg.PlotWidget(name='EMGRecordPlot')
+        self.emgrecord.setRange(QtCore.QRectF(0,-200,self.sample_size,700))
+        self.emgrecord.disableAutoRange()
+        self.emgrecord.setTitle("EMG Record")
+        l.addWidget(self.emgrecord, 0, 3, 1, 2)
+        print('Emg plot set')
         # Shows acceleration plot
-        self.accplot = pg.PlotWidget(name='ACCplot')
-        self.accplot.setRange(QtCore.QRectF(0,-2,1000,7))
-        self.accplot.setTitle("Accelerometer")
-        l.addWidget(self.accplot, 1, 1, 1, 1)
-        
-        # Creates button to go to acceleration plots screen
-        acc_button = QtGui.QPushButton('Acceleration Plots')
-        acc_button.setToolTip('Open only acceleration plots.')
-        acc_button.clicked.connect(self.acc_plots)
-        l.addWidget(acc_button, 1, 0, 1, 1)
-
+        self.accrecord = pg.PlotWidget(name='ACCRecordPlot')
+        self.accrecord.setRange(QtCore.QRectF(0,-2,self.sample_size,7))
+        self.accrecord.setTitle("Accelerometer Record")
+        l.addWidget(self.accrecord, 1, 3, 1, 2)
+        print('Acc plot set')
         # Shows orientation plot
-        self.oriplot = pg.PlotWidget(name='ORIplot')
-        self.oriplot.setRange(QtCore.QRectF(0,-1,1000,8))
-        self.oriplot.setTitle("Orientation")
-        l.addWidget(self.oriplot, 2, 1, 1, 1)
-        
-        # Creates button to go to orientation plots screen
-        ori_button = QtGui.QPushButton('Orientation Plots')
-        ori_button.setToolTip('Open only orientation plots.')
-        ori_button.clicked.connect(self.ori_plots)
-        l.addWidget(ori_button, 2, 0, 1, 1)
-        
+        self.orirecord = pg.PlotWidget(name='ORIRecordPlot')
+        self.orirecord.setRange(QtCore.QRectF(0,-1,self.sample_size,8))
+        self.orirecord.setTitle("Orientation Record")
+        l.addWidget(self.orirecord, 2, 3, 1, 2)
+        print('Ori plot set')
         # Creates list for EMG recordings then starts recording buffer
         # readings. Plots EMG buffer data on plot as well.
-        self.emgcurve = []
-        for i in range(8):
-            c = self.emgplot.plot(pen=(i,10))
+        self.record_emgcurve = []
+        for i in range(EMG_RANGE):
+            c = self.emgrecord.plot(pen=(i,10))
             c.setPos(0,i*50)
-            self.emgcurve.append(c)
-        
+            self.record_emgcurve.append(c)
+            self.record_emgcurve[-1].setData(self.emg[i])
+        print('Emg curve')
         # Creates list for acceleration recordings then starts recording buffer
         # readings. Plots acceleration buffer data on plot as well.
-        self.oricurve = []
-        for i in range(4):
-            c = self.oriplot.plot(pen=(i,5))
+        self.record_oricurve = []
+        for i in range(ORI_RANGE):
+            c = self.orirecord.plot(pen=(i,5))
             c.setPos(0,i*2)
-            self.oricurve.append(c)
-
+            self.record_oricurve.append(c)
+            self.record_oricurve[-1].setData(self.ori[i])
+        print('Ori curve')
         # Creates list for orientation recordings then starts recording buffer
         # readings. Plots acceleration buffer data on plot as well.
-        self.acccurve = []
-        for i in range(4):
-            c = self.accplot.plot(pen=(i,5))
+        self.record_acccurve = []
+        for i in range(ACC_RANGE):
+            c = self.accrecord.plot(pen=(i,5))
             c.setPos(0,i*2)
-            self.acccurve.append(c)
+            self.record_acccurve.append(c)
+            self.record_acccurve[-1].setData(self.acc[i])
+        print('Acc curve')
         
-        # Gets current time so system knows when plots were updated
-        self.lastUpdateTime = time.time()
+        begin_label = QtGui.QLabel('Starting index to snip from')
+        l.addWidget(begin_label, 1, 0, 1, 1)
         
-        # Sets variable for selective plot updating
-        self.window_type = 'all'
+        self.begin = QtGui.QLineEdit()
+        self.begin.setText('0')
+        self.begin.textChanged.connect(self.update_region)
+        l.addWidget(self.begin, 1, 1, 1, 1)
         
-        # If first run, show plots
-        if self.firstWin:
+        end_label = QtGui.QLabel('Ending index to snip to')
+        l.addWidget(end_label, 2, 0, 1, 1)
+        
+        self.end = QtGui.QLineEdit()
+        self.end.setText(str(self.sample_size))
+        self.end.textChanged.connect(self.update_region)
+        l.addWidget(self.end, 2, 1, 1, 1)
+        
+        reset_plot_range = QtGui.QPushButton('Reset Waveform')
+        reset_plot_range.setToolTip('Reset xRange')
+        reset_plot_range.clicked.connect(self.resetEvent)
+        self.reset_plot_range = reset_plot_range
+        l.addWidget(reset_plot_range, 3, 0, 1, 2)
+        
+        save_plot_range = QtGui.QPushButton('Save Waveform')
+        save_plot_range.setToolTip('Save to CSV')
+        save_plot_range.clicked.connect(self.saveEvent)
+        self.save_plot_range = save_plot_range
+        l.addWidget(save_plot_range, 3, 4, 1, 1)
+        
+        open_new_file = QtGui.QPushButton('Open File')
+        open_new_file.setToolTip('Open New CSV')
+        open_new_file.clicked.connect(self.openEvent)
+        self.open_new_file = open_new_file
+        l.addWidget(open_new_file, 4, 2, 1, 2)
+        
+        if self.main:
             self.show()
-            self.start_listening()
-            self.firstWin = False
+            
+    def update_xRange(self, xBegin, xEnd):
+        self.emgrecord.setRange(QtCore.QRectF(xBegin,-200,xEnd,700))
+        self.accrecord.setRange(QtCore.QRectF(xBegin,-2,xEnd,7))
+        self.orirecord.setRange(QtCore.QRectF(xBegin,-1,xEnd,8))
+        
+    def openEvent(self):
+        self.close()
+        self.__init__('')
+        
+    def resetEvent(self):
+        self.b = 0
+        self.e = self.sample_size
+        self.update_xRange(self.b, self.e)
+        self.begin.setText(str(self.b))
+        self.end.setText(str(self.e))
+        
+    def saveEvent(self):
+        qm = QMessageBox
+        outFile = '.'.join(self.f.split('.')[:-1]) + '_snippped.csv'
+        if self.checkOverwrite(outFile) == qm.Yes:
+            outDF = pd.DataFrame(self.emg, index=['emg_%s' % (i+1) for i in range(self.emg.shape[0])])
+            outDF = pd.concat([outDF, pd.DataFrame(self.acc, index=['acc_%s' % (i+1) for i in range(self.acc.shape[0])])])
+            outDF = pd.concat([outDF, pd.DataFrame(self.ori, index=['ori_%s' % (i+1) for i in range(self.ori.shape[0])])])
+            outDF = outDF.T.iloc[self.b:self.e]
+            
+            outDF.to_csv(outFile, index=False)
+            qm.about(self, 'Save Success', 'File saved to\n%s' % outFile)
+            
+        else:
+            qm.about(self, 'No Data Saved', 'No data saved.')
+        
+    def checkOverwrite(self, filename):
+        if os.path.exists(filename):
+            return QMessageBox.question(self, 'File exists', 'File %s already\nexists, overwrite it?' % filename,
+                                QMessageBox.Yes | QMessageBox.No)
+                                
+        return QMessageBox.Yes
+        
+    def update_region(self):
+        try:
+            self.b = int(self.begin.text())
+            self.e = int(self.end.text())
+            self.update_xRange(self.b, self.e-self.b)
+            print(self.b, self.e)
+        except:
+            pass
+        
+    def closeEvent(self, event=0, restart=0):
+        pass
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--snipper", help="To load files and only use snipper",
+                    default=0, action="store_true")
+    
+    args = parser.parse_args()
+
     app = QtGui.QApplication(sys.argv)
-    window = RawWindow()
+    if args.snipper:
+        snipper = SnippingWindow('')
+    else:
+        window = RawWindow()
     sys.exit(app.exec_())

@@ -1,10 +1,3 @@
-"""
-myo_listener.py
-
-jdaly
-5/21/2015
-"""
-
 import myo as libmyo
 import numpy as np
 import config

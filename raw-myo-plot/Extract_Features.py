@@ -10,10 +10,17 @@ import pandas as pd
 #import matlab.engine
 #eng = matlab.engine.start_matlab()
 
-f = os.path.join('myo_data','myo_record_0.csv')
-df = pd.read_csv(f)
+
 
 def getFilename(RECORDS_DIR='myo_data'):
+    """
+        Function to allow user to pick filename of CSV to load in the
+            input records directory. Filename is picked by its
+            index within the directory which is output to the user
+            along with the associated filename. If an invalid
+            file index is entered, the function keeps asking for
+            a correct index until one is entered.
+    """
     if len(os.listdir(RECORDS_DIR)):
         print('Records found:')
         for i, f in enumerate(sorted(set(os.listdir(RECORDS_DIR)))):
@@ -37,43 +44,109 @@ def getFilename(RECORDS_DIR='myo_data'):
         return ''
             
 def get_record_features(data):
+    """
+        Function to print results of all feature extracting functions
+            based on data input
+            
+        :data: - Dataframe of loaded EMG data from CSV
+    """
     print(get_RMS(data))
     print(get_Var(data))
     print(get_MAV(data))
-    print('Zero Crossings:',zero_crossings2(data))
+    print('Zero Crossings:',get_zero_crossings(data))
     #print ('Waveform Lengths:',get_waveform_length())
     
 def get_RMS(data):
+    """
+        Function to get root mean squared value for each dataframe column.
+            
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+        :RMS: - Dataframe of RMS values from input in each column
+    """
+    
+    # Get number of rows
     n = data.shape[0] 
+    # Square each value in table
     data = data.apply(lambda x:x**2)
+    # Sum each column values
     s = data.apply(np.sum,axis = 0)
+    # SQRT resulting single value within each column
     RMS = s.apply(lambda x:np.sqrt(x/n))
     return RMS
 
 def get_Var(data):
+    """
+        Function to get variance feature for each column.
+        
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+        :data: - Dataframe of varience values for each input column
+    """
+    # Gets standard deviation by column then squares that value
     data = (np.std(data,axis = 0))**2
     return data
 
 def get_MAV(data):
+    """
+        Function to get mean absolute value feature for each column.
+        
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+        :data: - Dataframe of MAV for each input column
+    """
+    # Gets absolute value for each value in table then gets mean of each column.
     data = np.mean(np.abs(data), axis = 0)
     return data
 
-def get_zero_crossing():
+def get_zero_crossing_matlab():
+    """
+        DEPRECIATED - See get_zero_crossings() function below
+        
+        Function to get number of zero crossings feature by using MATLAB script
+    """
      Z = eng.Zero_Crossing()
      
      return np.array(Z).astype(int)
 
-def zero_crossings2(data):
-    crossings = {}
+def get_zero_crossings(data):
+    """
+        Function to get number of zero crossings feature for each column
+        
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+        :data: - Dataframe of zero crossings count per column
+    """
+    
+    crossings = pd.DataFrame(columns=list(data))
     for col in list(data):
-        crossings[col] = np.where(np.diff(np.sign(data[col])))[0]
-        crossings[col] = len(crossings[col])
+        crossings[col].loc[0] = len(np.where(np.diff(np.sign(data[col])))[0])
         
     return crossings
 
-def get_waveform_length():
+def get_waveform_length_matlab():
     W = eng.Waveform_Length()
     return np.array(W).astype(int) 
+    
+def get_waveform_length(data):
+    """
+        Function to get waveform length feature for each column
+        
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+    """
 
 if __name__ == '__main__':
+    f = os.path.join('myo_data','myo_record_0.csv')
+    df = pd.read_csv(f)
     get_record_features(df)
