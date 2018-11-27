@@ -8,7 +8,6 @@ ACC_RANGE = 3
 
 # General output folder and filename for recorded data
 OUT_FOLDER = 'myo_data'
-OUT_FILE = os.path.join(OUT_FOLDER, 'myo_record_%s.csv')
 
 # Class for recording MYO data
 class myo_data_collector(object):
@@ -54,20 +53,20 @@ class myo_data_collector(object):
             
             self.samples_left -= 1
             
-    def save_plot_data(self, listener):
+    def save_plot_data(self, listener, filename):
         self.timescale = range(len(listener.emg.data[0]))
         
         self.emg = np.array(listener.emg.data)
         self.ori = np.array(listener.orientation.data)
         self.acc = np.array(listener.acc.data)
 
-        filename = self.save_record()
+        filename = self.save_record(filename)
         
         self.reset_data()
         
         return filename
                     
-    def save_record(self):
+    def save_record(self, filename):
         # If recorder is told to save buffers...
         
         # Creates dataframe and inputs time
@@ -87,18 +86,23 @@ class myo_data_collector(object):
             out['acc_%s' % (i+1)] = pd.Series(self.acc[i])
             
         # Gets filename to save at then outputs as CSV without df index
-        filename = find_filename()
+        filename = find_filename(filename)
         out.to_csv(filename, index=False)
         
         self.reset_data()
         
         return filename
         
-def find_filename():
+def find_filename(OUT_FILE):
     """
         Function to find next filename to use in records directory so not
         files are overwritten.
     """
+    if not '%s' in OUT_FILE:
+        print('WARNING: NO %s REPLACEMENT IN SAVE SCHEME! WRITING '
+                'FILE AS NAME WAS INPUT!')
+        return OUT_FILE
+    
     i = 0
     temp = OUT_FILE % i
     
