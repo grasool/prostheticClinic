@@ -560,11 +560,12 @@ class RecordSettings(QtGui.QMainWindow):
         
 class SnippingWindow(QtGui.QMainWindow):
     def __init__(self, filename, parent=None):
-        self.main = False
-        print('Start')
+        
         # Sets up window parent
         super(SnippingWindow, self).__init__(parent)
-        print('Super\'d')
+        
+        self.main = False
+        
         # Sets main window bar title and size
         self.setWindowTitle('Record Snipper')
         self.resize(800,480)

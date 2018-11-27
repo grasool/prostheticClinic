@@ -7,8 +7,6 @@ Created on Thu Nov  1 12:54:07 2018
 import os
 import numpy as np
 import pandas as pd
-#import matlab.engine
-#eng = matlab.engine.start_matlab()
 
 
 
@@ -43,7 +41,7 @@ def getFilename(RECORDS_DIR='myo_data'):
         print('No records found.')
         return ''
             
-def get_record_features(data):
+def print_record_features(data):
     """
         Function to print results of all feature extracting functions
             based on data input
@@ -53,8 +51,47 @@ def get_record_features(data):
     print(get_RMS(data))
     print(get_Var(data))
     print(get_MAV(data))
-    print('Zero Crossings:',get_zero_crossings(data))
-    #print ('Waveform Lengths:',get_waveform_length())
+    print('Zero Crossings:\n',get_zero_crossings(data))
+    print('Waveform Lengths:\n',get_waveform_length(data))
+    
+def get_record_features(data, savefile=False):
+    """
+        Function to return all feature results based on data input
+        
+        INPUT
+        :data: - Dataframe of loaded EMG data from CSV
+        
+        OUTPUT
+        :features: - Dictionary of dataframes for extracted features
+    """
+    features = {}
+    features['rms'] = get_RMS(data)
+    features['var'] = get_Var(data)
+    features['mav'] = get_MAV(data)
+    features['zc'] = get_zero_crossings(data)
+    features['wfl'] = get_waveform_length(data)
+    
+    if savefile:
+        save_features(features, savefile)
+        
+    return features
+    
+def save_features(data_dict, f):
+    """
+        Function to save extracted features in specified filename
+        
+        INPUTs
+        :data_dict: - Dictionary of dataframes like the one output from 
+                        get_record_features()
+        :f: - CSV filename to save features to
+        
+    """
+    out = pd.DataFrame(columns=list(data_dict[0]))
+    for i in list(data_dict):
+        data_dict[i].loc[0, ('feature')] = id
+        out = pd.concat([out, data_dict[i]], ignore_axis=True)
+        
+    out.to_csv(f, index=False)
     
 def get_RMS(data):
     """
@@ -111,9 +148,9 @@ def get_zero_crossing_matlab():
         
         Function to get number of zero crossings feature by using MATLAB script
     """
-     Z = eng.Zero_Crossing()
+    Z = eng.Zero_Crossing()
      
-     return np.array(Z).astype(int)
+    return np.array(Z).astype(int)
 
 def get_zero_crossings(data):
     """
@@ -126,13 +163,18 @@ def get_zero_crossings(data):
         :data: - Dataframe of zero crossings count per column
     """
     
-    crossings = pd.DataFrame(columns=list(data))
+    crossings = pd.DataFrame(0, index=[0], columns=list(data))
     for col in list(data):
         crossings[col].loc[0] = len(np.where(np.diff(np.sign(data[col])))[0])
         
     return crossings
 
 def get_waveform_length_matlab():
+    """
+        DEPRECIATED
+        
+        Use function below instead (get_waveform_length)
+    """
     W = eng.Waveform_Length()
     return np.array(W).astype(int) 
     
@@ -144,7 +186,11 @@ def get_waveform_length(data):
         :data: - Dataframe of loaded EMG data from CSV
         
         OUTPUT
+        :data: - Dataframe of waveform length sums per column
     """
+    data = data.diff().abs().sum(axis=0)
+    
+    return data
 
 if __name__ == '__main__':
     f = os.path.join('myo_data','myo_record_0.csv')

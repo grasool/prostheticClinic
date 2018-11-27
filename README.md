@@ -32,6 +32,15 @@ Troubleshooting Known Errors
         2. Re-open MYO Connect
         3. Retry running script
         4. If same error occurs, connect MYO to computer via USB for a minute
-        5. Unconnect MYO, put back on arm
+        5. Disconnect MYO, put back on arm
         6. Retry running script
         7. If error still persists, restart computer.
+        
+### When WinError 126 is thrown from loading SDK_BIN_PATH
+- Usually happens when SDK path within myo.config file is incorrect
+    - TO CORRECT THIS PATH:
+        1. Find where MYO SDK is. It should be in repo root under 
+        myo-sdk-win-0.9.0\bin.
+        2. Delete raw-myo-plot\myo.config
+        3. Follow steps 2 and 3 from [before first run setup](#before-first-run...)
+        4. Retry running raw_myo_ploy.py
