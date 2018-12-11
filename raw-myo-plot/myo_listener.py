@@ -45,7 +45,7 @@ class Listener(libmyo.DeviceListener):
         pass
 
     def on_pose(self, myo, timestamp, pose):
-        print("In pose...")
+        #print("In pose...")
         """
         if pose == libmyo.Pose.double_tap:
             myo.set_stream_emg(libmyo.StreamEmg.enabled)
@@ -55,7 +55,7 @@ class Listener(libmyo.DeviceListener):
             self.emg_enabled = False
         """
         self.pose = pose
-        print(str(self.pose))
+        #print(str(self.pose))
 
     def on_rssi(self, myo, timestamp, rssi):
         pass

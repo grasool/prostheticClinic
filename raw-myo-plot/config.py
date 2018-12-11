@@ -7,8 +7,8 @@ def config():
     # Function for creating config file for user
     
     # Gets SDK path from user
-    sdk_path = input(r'Filepath to MYO SDK bin folder. MYO SDK is included within this repo'
-                        '(Ex. C:\Users\YOU\Documents\myo-sdk-win-0.9.0\bin): ')
+    sdk_path = input('Filepath to MYO SDK bin folder. MYO SDK is included within this repo'
+                        r'(Ex. C:\Users\YOU\Documents\myo-sdk-win-0.9.0\bin): ')
     
     if os.path.exists(CONFIG_FILE):
         out = load_config()
