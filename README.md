@@ -110,6 +110,7 @@ put back into RPi.
     which finger then reconfigure the connections on the PCA9685 board but this 
     is a more annoying method considering all of the wires that have to be unplugged 
     and plugged back in.
+    
 ![Circuit Schematic](docs/System Diagrams and Images/prostheticController.png)
 
 ### Python Scripts
