@@ -100,7 +100,8 @@ put back into RPi.
     1. RPi Zero W
     2. PCA9685 PWM Controller
     3. Servo Motors
-- These components should be hooked up in the configuration outlined in the schematic below.
+- These components should be hooked up in the configuration outlined in the schematic below. 
+Circuit can also be found [here](docs/System Diagrams and Images/prostheticController.png)
 - When hooking up the servos, be sure to put them in the PCA9685 PWM slots from left to right.
     1. The order the servos have been hooked up in has changed many times. It is 
     easy to change this configuration within the [motion.py](myo-arm-control/motion.py) 
@@ -111,7 +112,7 @@ put back into RPi.
     is a more annoying method considering all of the wires that have to be unplugged 
     and plugged back in.
     
-![Circuit Schematic](docs/System-Diagrams-and-Images/prostheticController.png)
+![Circuit Schematic](docs/System Diagrams and Images/prostheticController.png)
 
 ### Python Scripts
 #### Dependencies
