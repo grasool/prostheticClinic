@@ -231,7 +231,8 @@ def select_batch(dir):
     return files
     
 def regex_batch(dir):
-    print('Regex functionality not complete yet... Exiting...')
+    print('Regex functionality not complete yet, please '
+            'select by specific files for now... Exiting...')
     return []
     
 if __name__ == '__main__':

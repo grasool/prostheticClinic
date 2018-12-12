@@ -6,11 +6,18 @@
 
 SETUP
 -----
-### RPi Zero
-Raspberry Pi Zero was used as the controller for this project. Luckily, this 
+### RPi Zero W
+Raspberry Pi Zero W was used as the controller for this project. Luckily, this 
 version used has an on-board WiFi chip which enables SSH. Unfortunately, 
 this WiFi chip cannot connect to Rowan WiFis (can probably connect to IoT engineering 
 network but solution used was easier).
+
+##### LOGIN CREDENTIALS
+- Username: pi
+- Password: rowanclinic
+- NOTE: These are the credentials that were set at the end of the Fall 2018 
+semester and can be changed by future teams. At the end of each semester 
+these credentials should be updated for the next team
 
 To connect to RPi, folloing steps must be done...
 1. Have at least one group member with smart phone or usable hotspot.
@@ -53,7 +60,19 @@ these networks in the order that they are in so be sure to add highest priority 
     - address = IP that RPi will be at once connected to WiFi
         - When trying to SSH in later, this is the IP you will need to connect to
         - It is best this way because IP will always be the same for RPi on this 
-        network.
+        network instead of sometimes switching upon reconnection.
+        - NOTE: When finding IP address to input, take the IP of your computer 
+        while on the hotspot (from the `ifconfig` or `ipconfig` command) and 
+        set your RPi's IP to be close to your computer's IP.
+            - For example if your computer's IP on the hotspot is 192.168.1.222, 
+            it might be good to set your RPi's IP to 192.168.1.224.
+            - This should be done based off an issue encountered with Fall 2018 
+            team where one phone hotspot was switched out (iPhone changed to 
+            Android) and only the gateway IP was changed. For some reason 
+            when attempting to connect to the old RPi IP set up for the iPhone 
+            hotspot, SSH could not be established. The IP was then reset to be 
+            closer to a computer's IP when connected to the hotspot and then 
+            an SSH connection could be established.
     - netmask = Typcially 255.255.255.0 see next point for how to find
     - gateway = Hotspot base address
     - FINDING NETMASK AND GATEWAY
@@ -67,13 +86,38 @@ these networks in the order that they are in so be sure to add highest priority 
 put back into RPi.
 12. Reboot RPi, and make sure Hotspot is on.
 13. RPi may take a couple minutes to boot up and connect to hotspot so be patient.
-    
-    
-        
+    - Using phone as hotspot can help here because most phones will indicate 
+    how many devices are connected. Therefore you will be able to see when 
+    the RPi connects.
+14. Once RPi is connected to hotspot, SSH into it at the pi user
+    - With Windows you will need to download an SSH software such as putty or 
+    MobaXTerm
+    - With Linux simply open a command prompt and enter `ssh pi@[Previously set RPi 
+    IP]`
 
-### Raw MYO Plotter
+### Control Circuit Integration
+- Within the circuit to control the prosthetic hand there are 3 main components
+    1. RPi Zero W
+    2. PCA9685 PWM Controller
+    3. Servo Motors
+- These components should be hooked up in the configuration outlined in the schematic below.
+- When hooking up the servos, be sure to put them in the PCA9685 PWM slots from left to right.
+    1. The order the servos have been hooked up in has changed many times. It is 
+    easy to change this configuration within the [motion.py](myo-arm-control/motion.py) 
+    script. Within `class Motion`'s `__init__` function just reorder the class's 
+    `self.motor_order` list.
+    2. Alternatively, you could just figure out which figure out which function moves 
+    which finger then reconfigure the connections on the PCA9685 board but this 
+    is a more annoying method considering all of the wires that have to be unplugged 
+    and plugged back in.
+
+### Python Scripts
 #### Dependencies
 1. Python 3.5+
+    - Any Python 3 version should work but everything was developed and tested with
+    Python 3.5+. 
+    - NOTE: Python 2 may be used for scripts in [Previous Work](/Previous Work) 
+    directory but not all scripts in this directory were tested or run.
 
 #### Before first run...
 1. Open powershell in raw-myo-plot directory
@@ -87,10 +131,12 @@ python3 config.py
 ```
 pip3 install -r requirements.txt
 ```
+    - If any missing library issues come up while running Python scripts, please
+    add them to the requirements.txt file.
 
 Troubleshooting Known Errors
 ----------------------------
-### When connection to MYO hub cannot be created.
+### Running raw_myo_plot.py: When connection to MYO hub cannot be created.
 - Usually happens when hub is not shut down before script is shut down.
     - TO FREE MYO HUB:
         1. Open task manager, close MYO Connect program or service
@@ -101,7 +147,7 @@ Troubleshooting Known Errors
         6. Retry running script
         7. If error still persists, restart computer.
         
-### When WinError 126 is thrown from loading SDK_BIN_PATH
+### Running raw_myo_plot.py: When WinError 126 is thrown from loading SDK_BIN_PATH
 - Usually happens when SDK path within myo.config file is incorrect
     - TO CORRECT THIS PATH:
         1. Find where MYO SDK is. It should be in repo root under 
