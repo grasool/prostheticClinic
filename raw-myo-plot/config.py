@@ -7,15 +7,18 @@ def config():
     # Function for creating config file for user
     
     # Gets SDK path from user
-    sdk_path = input(r'Filepath to MYO SDK bin folder (Ex. C:\Users\YOU\Documents\myo-sdk-win-0.9.0\bin): ')
+    sdk_path = input('Filepath to MYO SDK bin folder. MYO SDK is included within this repo'
+                        r'(Ex. C:\Users\YOU\Documents\myo-sdk-win-0.9.0\bin): ')
     
-    # Formats into dict to be output as JSON
-    out = {'sdk_path': sdk_path}
+    if os.path.exists(CONFIG_FILE):
+        out = load_config()
+        out.update({'sdk_path': sdk_path})
+    else:
+        # Formats into dict to be output as JSON
+        out = {'sdk_path': sdk_path}
     
     # Outputs data
-    _f = open(CONFIG_FILE, 'w')
-    json.dump(out, _f)
-    _f.close()
+    save_config(out)
     print('Config file saved!')
     
 def load_config(test=0):
@@ -30,6 +33,15 @@ def load_config(test=0):
         print('\n\nLoading config file tested and successful...\nContents: %s' % out)
         
     return out
+    
+def save_config(config_dict):
+    # Function to save dictionary of config data
+    
+    _f = open(CONFIG_FILE, 'w')
+    json.dump(config_dict, _f)
+    _f.close()
+    
+    print('Config file saved!')
     
 if __name__ == '__main__':
     # If this file is run, config file is to be set up then tests load_config

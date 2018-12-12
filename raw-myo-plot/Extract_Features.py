@@ -192,7 +192,58 @@ def get_waveform_length(data):
     
     return data
 
+def get_all_files(dir):
+    c = input('Select specific files (enter 0) or select based on regex (enter 1)? ')
+    if c == '0':
+        files = select_batch(dir)
+    elif c == '1':
+        files = regex_batch(dir)
+    else:
+        files = []
+        
+    return files
+        
+def select_batch(dir):
+    print('\n' + '='*40 + '\nSELECT FILES\n')
+    for i, f in enumerate(sorted(set(os.listdir(dir)))):
+        print(i, ':', f)
+        
+    c = input('\nInput number choices separated by commas or -1 for all: ')
+    c = c.replace(' ', '').split(',')
+        
+    if c[0] == '-1':
+        c = range(len(os.listdir(dir)))
+        
+    files = []
+    for e in c:
+        try:
+            int(c[0])
+        except:
+            print('Could not use %s as index. Not an integer.' % e)
+            continue
+            
+        f = sorted(set(os.listdir(dir)))[int(e)]
+        alternate_file = os.path.join(dir, '.'.join(f.split('.')[:-1]) + '_snipped.csv')
+        if '_snipped' in f or os.path.exists(alternate_file):
+            continue
+        files.append(os.path.join(dir, f))
+        
+    return files
+    
+def regex_batch(dir):
+    print('Regex functionality not complete yet, please '
+            'select by specific files for now... Exiting...')
+    return []
+    
 if __name__ == '__main__':
-    f = os.path.join('myo_data','myo_record_0.csv')
-    df = pd.read_csv(f)
-    get_record_features(df)
+    c = input('Batch or test (b/t): ')
+    if c == 'b':
+        c = input('Select specific files (enter 0) or select based on regex (enter 1)? ')
+        if c == '0':
+            select_batch('myo_data')
+        elif c == '1':
+            regex_batch('myo_data')
+    elif c == 't':
+        f = os.path.join('myo_data','myo_record_0.csv')
+        df = pd.read_csv(f)
+        get_record_features(df)

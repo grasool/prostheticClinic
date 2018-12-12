@@ -2,7 +2,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox
 import pyqtgraph as pg 
 
-import data_collector
+import data_collector, config
 import Extract_Features as ef
 import myo as libmyo #; libmyo.init()
 from myo_listener import Listener
@@ -15,6 +15,10 @@ import sys, time, os
 EMG_RANGE = 8
 ORI_RANGE = 4
 ACC_RANGE = 3
+
+# General output folder and filename for recorded data
+OUT_FOLDER = 'myo_data'
+DEFAULT_OUT_FILE = os.path.join(OUT_FOLDER, 'myo_record_%s.csv')
 
 #class RawWindow(QtGui.QWidget):
 class RawWindow(QtGui.QMainWindow):
@@ -31,12 +35,24 @@ class RawWindow(QtGui.QMainWindow):
         self.toggle_snipping = True
         self.sample_rate = 200 # Hz - 200 default for MYO Band
         self.refreshRate = 1/self.sample_rate
+        self.save_scheme = self.load_save_scheme()
+        print('Current save scheme: %s' % self.save_scheme)
         
         # Bool for first run so program knows to show window
         self.firstWin = True
         self.settings_open = False
         
         self.all_plots()
+        
+    def load_save_scheme(self, test=0):
+        self.config_data = config.load_config()
+        
+        if 'save_scheme' in self.config_data:
+            return self.config_data['save_scheme']
+        
+        print('No save scheme found, defaulting to %s' % (DEFAULT_OUT_FILE))
+        self.config_data.update({'save_scheme': DEFAULT_OUT_FILE})
+        config.save_config(self.config_data)
         
     def revert_to_all_plots(self):
         # Closes last window then goes back to main screen
@@ -385,6 +401,10 @@ class RawWindow(QtGui.QMainWindow):
             self.sample_rate = float(self.r.samplerate.text())
             self.refreshRate = 1/self.sample_rate
             self.record_time = float(self.r.numentry.text())
+            self.save_scheme = self.r.name_scheme.text()
+            self.config_data.update({'save_scheme': self.save_scheme})
+            config.save_config(self.config_data)
+            
             self.settingsTick.setText(self.get_settings_tick())
         except ValueError as e1:
             QMessageBox.about(self, "ERROR", "Settings could not be saved. Input value is invalid float value.")
@@ -410,10 +430,10 @@ class RawWindow(QtGui.QMainWindow):
         if self.myo_data_record.recording:
             # Save recorded data stream and output filename
             # NOTE: Record buffer is also reset within this function
-            filename = self.myo_data_record.save_record()
+            filename = self.myo_data_record.save_record(self.save_scheme)
             print('Record saved at %s' % filename)
-            self.snipper = SnippingWindow(filename, self)
-            self.snipper.show()
+            #self.snipper = SnippingWindow(filename, self)
+            #self.snipper.show()
             
             # Reset record data button back to green and original label
             self.record.setStyleSheet("background-color: green")
@@ -432,7 +452,9 @@ class RawWindow(QtGui.QMainWindow):
         self.myo_data_record.toggle_recording()
         
     def record_plot_data(self):
-        filename = self.myo_data_record.save_plot_data(self.listener)
+        filescheme = self.config_data['save_scheme']
+        filename = self.myo_data_record.save_plot_data(self.listener,
+                                                        filescheme)
         
         print('Plot record saved at %s' % filename)
         
@@ -537,15 +559,22 @@ class RecordSettings(QtGui.QMainWindow):
         snipping_toggle.toggled.connect(window.toggle_snipping_window)
         self.l.addWidget(snipping_toggle, 2, 1, 1, 1)
         
+        ssnl = QtGui.QLabel('Record CSV naming scheme (enter %s for iterative naming)')
+        self.l.addWidget(ssnl, 3, 0, 1, 1)
+        
+        self.name_scheme = QtGui.QLineEdit()
+        self.name_scheme.setText(str(window.config_data['save_scheme']))
+        self.l.addWidget(self.name_scheme, 4, 0, 1, 2)
+        
         save_plot_data = QtGui.QPushButton('Save')
         save_plot_data.setToolTip('Save MYO Settings')
         save_plot_data.clicked.connect(self.saveEvent)
         self.save_plot_data = save_plot_data
-        self.l.addWidget(save_plot_data, 3, 0, 1, 1)
+        self.l.addWidget(save_plot_data, 5, 0, 1, 1)
         
         save_plot_data = QtGui.QPushButton('Exit')
         save_plot_data.clicked.connect(self.closeEvent)
-        self.l.addWidget(save_plot_data, 3, 1, 1, 1)
+        self.l.addWidget(save_plot_data, 5, 1, 1, 1)
         
     def saveEvent(self):
         global window
@@ -557,6 +586,7 @@ class RecordSettings(QtGui.QMainWindow):
         global window
         
         window.settings_open = False
+        self.close()
         
 class SnippingWindow(QtGui.QMainWindow):
     def __init__(self, filename, parent=None):
@@ -572,7 +602,13 @@ class SnippingWindow(QtGui.QMainWindow):
         
         if filename == '':
             self.main = True
-            filename = ef.getFilename()
+            self.all_files = ef.get_all_files('myo_data')
+            if not len(self.all_files):
+                self.closeEvent()
+                
+            print('Loading %s files' % len(self.all_files)) 
+            filename = self.all_files[0]
+            self.all_files = self.all_files[1:]
             
         if not filename == '':
             self.load_record(filename)
@@ -580,7 +616,22 @@ class SnippingWindow(QtGui.QMainWindow):
             self.all_plots()
         
     
+    def load_next_file(self):
+        if not len(self.all_files):
+            self.closeEvent()
             
+        filename = self.all_files[0]
+        
+        if len(self.all_files) == 1:
+            self.all_files = []
+        else:
+            self.all_files = self.all_files[1:]
+        
+        if not filename == '':
+            self.load_record(filename)
+            print('Record Loaded')
+            self.all_plots()
+        
     def load_record(self, filename):
         self.f = filename
         df = pd.read_csv(filename)
@@ -630,18 +681,21 @@ class SnippingWindow(QtGui.QMainWindow):
         self.emgrecord.setTitle("EMG Record")
         l.addWidget(self.emgrecord, 0, 3, 1, 2)
         print('Emg plot set')
+        
         # Shows acceleration plot
         self.accrecord = pg.PlotWidget(name='ACCRecordPlot')
         self.accrecord.setRange(QtCore.QRectF(0,-2,self.sample_size,7))
         self.accrecord.setTitle("Accelerometer Record")
         l.addWidget(self.accrecord, 1, 3, 1, 2)
         print('Acc plot set')
+        
         # Shows orientation plot
         self.orirecord = pg.PlotWidget(name='ORIRecordPlot')
         self.orirecord.setRange(QtCore.QRectF(0,-1,self.sample_size,8))
         self.orirecord.setTitle("Orientation Record")
         l.addWidget(self.orirecord, 2, 3, 1, 2)
         print('Ori plot set')
+        
         # Creates list for EMG recordings then starts recording buffer
         # readings. Plots EMG buffer data on plot as well.
         self.record_emgcurve = []
@@ -651,6 +705,7 @@ class SnippingWindow(QtGui.QMainWindow):
             self.record_emgcurve.append(c)
             self.record_emgcurve[-1].setData(self.emg[i])
         print('Emg curve')
+        
         # Creates list for acceleration recordings then starts recording buffer
         # readings. Plots acceleration buffer data on plot as well.
         self.record_oricurve = []
@@ -725,7 +780,7 @@ class SnippingWindow(QtGui.QMainWindow):
         
     def saveEvent(self):
         qm = QMessageBox
-        outFile = '.'.join(self.f.split('.')[:-1]) + '_snippped.csv'
+        outFile = '.'.join(self.f.split('.')[:-1]) + '_snipped.csv'
         if self.checkOverwrite(outFile) == qm.Yes:
             outDF = pd.DataFrame(self.emg, index=['emg_%s' % (i+1) for i in range(self.emg.shape[0])])
             outDF = pd.concat([outDF, pd.DataFrame(self.acc, index=['acc_%s' % (i+1) for i in range(self.acc.shape[0])])])
@@ -737,6 +792,10 @@ class SnippingWindow(QtGui.QMainWindow):
             
         else:
             qm.about(self, 'No Data Saved', 'No data saved.')
+            
+        if self.main:
+            self.cw.close()
+            self.load_next_file()
         
     def checkOverwrite(self, filename):
         if os.path.exists(filename):
@@ -755,7 +814,7 @@ class SnippingWindow(QtGui.QMainWindow):
             pass
         
     def closeEvent(self, event=0, restart=0):
-        pass
+        self.close()
 
 if __name__ == '__main__':
     import argparse
