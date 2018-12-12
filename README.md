@@ -111,7 +111,7 @@ put back into RPi.
     is a more annoying method considering all of the wires that have to be unplugged 
     and plugged back in.
     
-![Circuit Schematic](docs/System Diagrams and Images/prostheticController.png)
+![Circuit Schematic](docs/System-Diagrams-and-Images/prostheticController.png)
 
 ### Python Scripts
 #### Dependencies
