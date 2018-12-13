@@ -12,6 +12,12 @@ version used has an on-board WiFi chip which enables SSH. Unfortunately,
 this WiFi chip cannot connect to Rowan WiFis (can probably connect to IoT engineering 
 network but solution used was easier).
 
+### MYO Band
+On any computers using scripts which get data from MYO band, MyoConnect will 
+be need to be installed. This essentially makes a "hub" object within python 
+which is where data is retrieved from. MyoConnect is only for Windows but 
+there is a Linux alternative called PyoConnect.
+
 ##### LOGIN CREDENTIALS
 - Username: pi
 - Password: rowanclinic
@@ -131,11 +137,11 @@ python3 config.py
 3. Enter path to MYO SDK bin folder
     1. Example: C:\Users\ROWAN\Documents\prostheticClinic\myo-sdk-win-0.9.0\bin
 4. Direct powershell to repository root directory and run...
-```
-pip3 install -r requirements.txt
-```
+
+`pip3 install -r requirements.txt`
+
     - If any missing library issues come up while running Python scripts, please
-    add them to the requirements.txt file.
+    add them to the requirements.txt file once correct package is found and installed.
 
 Troubleshooting Known Errors
 ----------------------------
